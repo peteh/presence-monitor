@@ -14,6 +14,8 @@ void setup()
 {
   Serial.begin(115200);
   mySensor.begin();
+  mySensor.setMotionThreshold(200);
+  mySensor.setOccupancyThreshold(200);
   delay(2000);
   Serial.println("Boot Complete");
 }
@@ -25,18 +27,9 @@ unsigned long lastCommandSend = millis();
 
 void loop()
 {
-  if (millis() - lastCommandSend > 10000)
+  if (millis() - lastCommandSend > 10000 && false)
   {
     Serial.println("Sending Command");
-    // mySerial.printf("th1=%d\n", TH1);
-    // mySerial.printf("th2=%d\n", TH2);
-    // mySerial.printf("getall\n");
-    mySensor.setMotionThreshold(200);
-    
-    mySensor.setOccupancyThreshold(200);
-    while(!mySensor.loop());
-    mySensor.sendRequest();
-    while(!mySensor.loop());
     lastCommandSend = millis();
     Serial.println("Finished Command");
   }
