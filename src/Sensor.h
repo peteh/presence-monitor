@@ -9,7 +9,12 @@ public:
     Sensor(uint8_t RX, uint8_t TX);
 
     void begin();
-
+    /**
+     * @brief Updates the sensor data, must be run as fast as possible
+     * 
+     * @return true if data has been updated for the sensor in this cycle
+     * @return false if data has not been updated in this cycle
+     */
     bool loop();
     bool hasMotion();
     bool hasOccupancy();

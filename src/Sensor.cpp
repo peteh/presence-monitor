@@ -132,11 +132,13 @@ void Sensor::processLine(char *data)
 
 bool Sensor::loop()
 {
+    // used to force exit of loop after certain amount of characters
+    uint8_t maxData = 200;
     char c;
-    if (m_serial.available())
+    while (m_serial.available() && maxData > 0)
     {
         c = m_serial.read();
-
+        maxData--;
         if (c == '\n')
         {
             m_buffer[m_index] = 0;
@@ -149,31 +151,32 @@ bool Sensor::loop()
         {
             m_buffer[m_index++] = c;
         }
-        
     }
     return false;
 }
 
 void Sensor::updateMotion(int beam, int signal)
 {
+    log_debug("Motion(%d, %d)", beam, signal);
     m_lastMotion = millis();
 }
 
 void Sensor::updateOccupancy(int beam, int signal)
 {
+    log_debug("Occupancy(%d, %d)", beam, signal);
     m_lastOccupancy = millis();
 }
 
 bool Sensor::hasMotion()
 {
-    unsigned long threshold = 5000;
+    unsigned long threshold = 10000;
     unsigned long currentTime = millis();
-    return (currentTime - m_lastMotion > threshold);
+    return (currentTime - m_lastMotion < threshold);
 }
 
 bool Sensor::hasOccupancy()
 {
-    unsigned long threshold = 5000;
+    unsigned long threshold = 10000;
     unsigned long currentTime = millis();
-    return (currentTime - m_lastMotion > threshold || currentTime - m_lastOccupancy > threshold);
+    return (hasMotion() || currentTime - m_lastOccupancy < threshold);
 }
