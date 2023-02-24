@@ -4,4 +4,4 @@ This project uses a 24 Ghz radar sensor to provide presence and motion detection
 
 ## Supported Sensors
 
-* HLK-LD1115H
+* [HLK-LD1115H](https://amzn.to/3KGcOd3)
