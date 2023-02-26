@@ -38,14 +38,14 @@ bool g_occupancy = false;
 
 unsigned long lastCommandSend = millis();
 
-void publishConfig(MqttEntity *device)
+void publishConfig(MqttEntity *entity)
 {
-    String payload = device->getHomeAssistantConfigPayload();
+    String payload = entity->getHomeAssistantConfigPayload();
     char topic[255];
-    device->getHomeAssistantConfigTopic(topic, sizeof(topic));
+    entity->getHomeAssistantConfigTopic(topic, sizeof(topic));
     client.publish(topic, payload.c_str());
 
-    device->getHomeAssistantConfigTopicAlt(topic, sizeof(topic));
+    entity->getHomeAssistantConfigTopicAlt(topic, sizeof(topic));
     client.publish(topic,
                    payload.c_str());
 }
