@@ -56,6 +56,17 @@ void publishConfig()
     publishConfig(&mqttMotion);
 }
 
+
+void publishState()
+{
+  char buffer[255];
+  snprintf(buffer, sizeof(buffer), "{\"occupancy\": \"%s\", \"motion\": \"%s\"}",
+           g_occupancy ? mqttOccupancy.getOnState() : mqttOccupancy.getOffState(),
+           g_motion ? mqttMotion.getOnState() : mqttMotion.getOffState());
+
+  client.publish(mqttOccupancy.getStateTopic(), buffer);
+}
+
 void connectToMqtt()
 {
     log_info("Connecting to MQTT...");
@@ -73,6 +84,7 @@ void connectToMqtt()
     // TODO: solve this somehow with auto discovery lib
     // client.publish(mqttTopic(MQTT_TOPIC_NONE, MQTT_ACTION_NONE).c_str(), "online");
     publishConfig();
+    publishState();
 }
 
 void connectToWifi()
@@ -87,15 +99,6 @@ void connectToWifi()
     log_info("Wifi connected!");
 }
 
-void publishState()
-{
-  char buffer[255];
-  snprintf(buffer, sizeof(buffer), "{\"occupancy\": \"%s\", \"motion\": \"%s\"}",
-           g_occupancy ? mqttOccupancy.getOnState() : mqttOccupancy.getOffState(),
-           g_motion ? mqttMotion.getOnState() : mqttMotion.getOffState());
-
-  client.publish(mqttOccupancy.getStateTopic(), buffer);
-}
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -119,14 +122,13 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 void setup()
 {
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
   mqttOccupancy.setValueTemplate("{{value_json.occupancy}}");
   mqttMotion.setCustomStateTopic(mqttOccupancy.getStateTopic());
   mqttMotion.setValueTemplate("{{value_json.motion}}");
 
   Serial.begin(115200);
-  presenceSensor.begin();
-  presenceSensor.setMotionThreshold(200);
-  presenceSensor.setOccupancyThreshold(200);
   WiFi.mode(WIFI_STA);
   WiFi.hostname(composeClientID().c_str());
   WiFi.setAutoConnect(true);
@@ -136,11 +138,22 @@ void setup()
   log_info("Connected to SSID: %s", wifi_ssid);
   log_info("IP address: %s", WiFi.localIP());
 
+  presenceSensor.begin();
+  presenceSensor.setMotionThreshold(5000);
+  delay(500);
+  presenceSensor.setOccupancyThreshold(400);
+  delay(500);
+  presenceSensor.setMotionTimeout(3);
+  presenceSensor.setOccupancyTimeout(3);
+
+
   client.setBufferSize(512);
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
 
   Serial.println("Boot Complete");
+
+  
 }
 
 
@@ -171,6 +184,7 @@ void loop()
     stateChanged = true;
     g_occupancy = occupancy;
     log_info("Occupancy: %d", occupancy);
+    digitalWrite(LED_BUILTIN, !g_occupancy);
   }
   if (g_motion != motion)
   {

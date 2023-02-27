@@ -19,16 +19,26 @@ void Sensor::sendRequest()
     while(!loop());
 }
 
+void Sensor::saveConfig()
+{
+    m_serial.printf("save\n");
+    while(!loop());
+}
+
 void Sensor::setMotionThreshold(uint16_t threshold)
 {
-    m_serial.printf("th1=%d\n", threshold);
+    m_motionThreshold = threshold;
+    m_serial.printf("th1=%d\n", m_motionThreshold);
     while(!loop());
+    delay(50);
 }
 
 void Sensor::setOccupancyThreshold(uint16_t threshold)
 {
-    m_serial.printf("th2=%d\n", threshold);
+    m_occupancyThreshold = threshold;
+    m_serial.printf("th2=%d\n", m_occupancyThreshold);
     while(!loop());
+    delay(50);
 }
 
 void Sensor::processLine(char *data)
@@ -137,7 +147,14 @@ bool Sensor::loop()
     char c;
     while (m_serial.available() && maxData > 0)
     {
+        // detect buffer overflow and reset buffer
+        if(m_index >= sizeof(m_buffer))
+        {
+            m_index = 0;
+        }
+
         c = m_serial.read();
+        
         maxData--;
         if (c == '\n')
         {
@@ -158,25 +175,33 @@ bool Sensor::loop()
 void Sensor::updateMotion(int beam, int signal)
 {
     log_debug("Motion(%d, %d)", beam, signal);
+    if(signal < m_motionThreshold)
+    {
+        log_debug("Motion signal threshold too low, skipping");
+        return;
+    }
     m_lastMotion = millis();
 }
 
 void Sensor::updateOccupancy(int beam, int signal)
 {
     log_debug("Occupancy(%d, %d)", beam, signal);
+    if(signal < m_occupancyThreshold)
+    {
+        log_debug("Occupancy signal threshold too low, skipping");
+        return;
+    }
     m_lastOccupancy = millis();
 }
 
 bool Sensor::hasMotion()
 {
-    unsigned long threshold = 10000;
     unsigned long currentTime = millis();
-    return (currentTime - m_lastMotion < threshold);
+    return (currentTime - m_lastMotion < m_motionTimeoutS * 1000);
 }
 
 bool Sensor::hasOccupancy()
 {
-    unsigned long threshold = 10000;
     unsigned long currentTime = millis();
-    return (hasMotion() || currentTime - m_lastOccupancy < threshold);
+    return (hasMotion() || currentTime - m_lastOccupancy < m_occupancyTimeoutS * 1000);
 }
